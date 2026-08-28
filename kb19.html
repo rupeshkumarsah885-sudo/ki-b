@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>स्मार्ट किराना बिलिंग & इन्वेंट्री सिस्टम</title>
+    <!-- बारकोड और QR स्कैनर लाइब्रेरी (Html5-Qrcode) -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-gradient);
+            margin: 0;
+            padding: 8px;
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 100%;
+            margin: auto;
+            background: var(--card-bg);
+            padding: 12px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        @media(min-width: 768px) {
+            .container { max-width: 950px; padding: 25px; border-radius: 16px; }
+            body { padding: 15px; }
+        }
+        h2, h3 { color: var(--primary); text-align: center; margin-top: 0; font-size: 1.25rem; }
+        @media(min-width: 768px) { h2, h3 { font-size: 1.5rem; } }
+        .card { 
+            background: #f9fafb; 
+            border: 1px solid #e5e7eb; 
+            padding: 12px; 
+            border-radius: 10px; 
+            margin-bottom: 15px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        @media(min-width: 768px) { .card { padding: 20px; border-radius: 12px; margin-bottom: 20px; } }
+        .btn { 
+            padding: 12px 16px; 
+            font-size: 16px; 
+            font-weight: 600; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            color: white; 
+            transition: all 0.2s ease; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 100%;
+        }
+        @media(min-width: 768px) { .btn { width: auto; } }
+        .btn-success { background-color: var(--success); }
+        .btn-danger { background-color: var(--danger); }
+        .btn-warning { background-color: var(--warning); color: #fff; }
+        .btn-primary { background-color: var(--primary); }
+        .btn-secondary { background-color: #6b7280; }
+        .btn:active { transform: scale(0.98); }
+        
+        input, select { 
+            width: 100%; 
+            padding: 12px; 
+            margin: 6px 0 12px 0; 
+            font-size: 16px; 
+            border: 2px solid #e5e7eb; 
+            border-radius: 8px; 
+            background: #fff;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus { border-color: var(--primary); outline: none; }
+        
+        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; min-width: 450px; }
+        th, td { border: 1px solid #e5e7eb; padding: 10px 8px; text-align: center; font-size: 14px; }
+        th { background-color: var(--primary); color: white; font-weight: 600; }
+        
+        .flex-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .flex-row > * { flex: 1 1 100%; }
+        @media(min-width: 600px) { .flex-row > * { flex: 1; } }
+        
+        .hidden { display: none; }
+        
+        /* स्टिकी हेडर बार - थ्री लाइन हमेशा स्क्रीन पर ऊपर दिखेगी */
+        .header-bar { 
+            position: sticky; 
+            top: 0; 
+            background: #ffffff; 
+            z-index: 999; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 2px solid #e5e7eb; 
+            padding: 10px 5px; 
+            margin-bottom: 15px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .menu-container { position: relative; display: inline-block; }
+        .menu-btn { background-color: #4b5563; color: white; padding: 8px 14px; font-size: 18px; border: none; cursor: pointer; border-radius: 8px; width: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .menu-content { display: none; position: absolute; right: 0; background-color: white; width: 260px; max-width: 90vw; box-shadow: 0px 8px 20px rgba(0,0,0,0.15); z-index: 1000; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; }
+        .menu-content button { color: #374151; padding: 12px 16px; text-decoration: none; display: block; width: 100%; border: none; background: none; text-align: left; font-size: 15px; cursor: pointer; font-weight: 500; }
+        .menu-content button:hover { background-color: #f3f4f6; color: var(--primary); }
+        .show { display: block; }
+        .tab-section { display: none; }
+        .tab-section.active { display: block; }
+
+        .upload-box {
+            border: 2px dashed var(--primary);
+            padding: 15px;
+            text-align: center;
+            border-radius: 10px;
+            background: #eef2ff;
+            cursor: pointer;
+        }
+        
+        #scanner-container {
+            width: 100%;
+            max-width: 100%;
+            margin: 10px auto;
+            display: none;
+        }
+        #reader { width: 100% !important; }
+        #reader__dashboard_section_csr button { padding: 8px 12px; background: var(--primary); color: white; border: none; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 1. लॉगिन सेक्शन -->
+    <div id="loginSection" class="card" style="background: linear-gradient(to bottom, #ffffff, #f8fafc); margin-top: 20px;">
+        <h2>🔐 दुकान सुरक्षा & सिंगल डिवाइस लॉगिन</h2>
+        <p style="text-align: center; color: #6b7280; margin-bottom: 15px; font-size: 14px;">अपनी गूगल शीट से जुड़ी ड्राइवर आईडी और पासवर्ड दर्ज करें</p>
+        
+        <label><b>ड्राइवर आईडी (Driver ID):</b></label>
+        <input type="text" id="driverIdInput" placeholder="जैसे: abc">
+        
+        <label><b>पासवर्ड (Password):</b></label>
+        <input type="password" id="passInput" placeholder="पासवर्ड दर्ज करें">
+        
+        <button class="btn btn-primary" style="width:100%; margin-top: 10px;" onclick="verifyOnlineLogin()">वेरीफाई & लॉगिन करें</button>
+        <p id="loginStatusMsg" style="color: var(--danger); text-align: center; font-weight: bold; margin-top: 15px; font-size: 14px;"></p>
+    </div>
+
+    <!-- 2. मुख्य ऐप डैशबोर्ड -->
+    <div id="appSection" class="hidden">
+        <!-- स्टिकी हेडर बार (स्क्रॉल करने पर ऊपर नहीं जाएगी) -->
+        <div class="header-bar">
+            <h2 id="shopTitleHeader" style="margin: 0; color: var(--primary); font-size: 1.1rem;">🛒 किराना स्मार्ट सिस्टम</h2>
+            
+            <div class="menu-container">
+                <button onclick="toggleMenu()" class="menu-btn">☰ मेनू</button>
+                <div id="threeDotMenu" class="menu-content">
+                    <button onclick="switchTab('billingTab')">🧾 बिलिंग काउंटर</button>
+                    <button onclick="switchTab('customerMasterTab')">👥 कस्टमर डायरेक्टरी (नाम/नंबर)</button>
+                    <button onclick="switchTab('sellingReportTab')" style="color: var(--primary);">📄 सेलिंग रिपोर्ट (एडिट/डिलीट)</button>
+                    <button onclick="switchTab('shortStockTab')" style="color: var(--warning);">⚠️ शॉर्टेड स्टॉक (<25kg/20Qty)</button>
+                    <button onclick="switchTab('bulkUploadTab')">📂 एक्सेल से प्रोडक्ट्स डंप करें</button>
+                    <button onclick="switchTab('stockTab')">📦 नया माल चढ़ाएं (Stock In)</button>
+                    <button onclick="switchTab('masterTab')">➕ सिंगल प्रोडक्ट जोड़ें</button>
+                    <button onclick="switchTab('inventoryTab')">📝 स्टॉक लिस्ट & दाम/मात्रा एडिट</button>
+                    <button onclick="switchTab('settingsTab')">⚙️ सेटिंग्स & डेटा बैकअप</button>
+                    <button onclick="switchTab('reportsTab')">📊 रिपोर्ट्स, लाभ & एक्सेल</button>
+                    <button onclick="logout()" style="color: var(--danger);">🔒 लॉक आउट / लॉग-आउट</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 1: बिलिंग काउंटर -->
+        <div id="billingTab" class="tab-section active">
+            <div class="card">
+                <h3>🧾 बिलिंग काउंटर</h3>
+                
+                <div style="background: #eef2ff; padding: 10px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #c7d2fe;">
+                    <label style="font-size: 13px; color: var(--primary); font-weight: bold;">👤 ग्राहक चुनें या नाम / नंबर टाइप करें:</label>
+                    <div class="flex-row" style="margin-top: 5px;">
+                        <div style="position:relative;">
+                            <input type="text" id="custName" placeholder="ग्राहक का नाम..." oninput="filterCustomerSuggestions('name')" style="margin:0;">
+                            <div id="customerSuggestionsBox" style="display:none; position:absolute; background:white; border:1px solid #ccc; width:100%; z-index:99; max-height:150px; overflow-y:auto; border-radius:4px;"></div>
+                        </div>
+                        <div style="position:relative;">
+                            <input type="text" id="custPhone" placeholder="मोबाइल नंबर..." oninput="filterCustomerSuggestions('phone')" style="margin:0;">
+                            <div id="phoneSuggestionsBox" style="display:none; position:absolute; background:white; border:1px solid #ccc; width:100%; z-index:99; max-height:150px; overflow-y:auto; border-radius:4px;"></div>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <a id="quickWhatsAppBtn" href="#" target="_blank" class="btn btn-success" style="flex:1; padding: 8px; text-align: center; text-decoration: none; font-size: 13px; display:none;">💬 WhatsApp चैट</a>
+                        <a id="quickCallBtn" href="#" class="btn btn-primary" style="flex:1; padding: 8px; text-align: center; text-decoration: none; font-size: 13px; display:none;">📞 डायरेक्ट कॉल</a>
+                    </div>
+                </div>
+
+                <div class="flex-row" style="margin-top:5px;">
+                    <div>
+                        <label style="font-size: 13px;"><b>1. कैटेगरी चुनें:</b></label>
+                        <select id="billCategorySelect" onchange="filterProductsByCategory()">
+                            <option value="ALL">-- सभी कैटेगरीज --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 13px;"><b>2. यूनिक कोड या नाम से खोजें:</b></label>
+                        <div style="display: flex; gap: 6px; align-items: center; margin: 0;">
+                            <input type="text" id="productSearchInput" placeholder="🔍 कोड या नाम..." oninput="searchProductsList()" style="margin:0; flex:1;">
+                            <button class="btn btn-secondary" style="padding: 12px; margin: 0; width: auto;" onclick="startCameraScanner('productSearchInput')">📷 स्कैन</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 8px;">
+                    <select id="billProductSelect" onchange="fillBillDetails()">
+                        <option value="">-- सामान चुनें --</option>
+                    </select>
+                </div>
+
+                <div class="flex-row" style="margin-top:5px;">
+                    <div>
+                        <label style="font-size:12px; color:#555; display:block;">मात्रा</label>
+                        <div style="display: flex; align-items: center; gap: 4px; margin-top: 4px;">
+                            <button type="button" class="btn btn-secondary" style="padding: 10px; margin: 0; width: 40px;" onclick="adjustBillQty(-1)">-</button>
+                            <input type="number" id="billQty" value="1" step="0.001" style="margin: 0; text-align: center;">
+                            <button type="button" class="btn btn-secondary" style="padding: 10px; margin: 0; width: 40px;" onclick="adjustBillQty(1)">+</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label style="font-size:12px; color:#555; display:block;">यूनिट</label>
+                        <select id="billUnit" style="margin-top:4px;">
+                            <option value="Kg">Kg</option>
+                            <option value="Packet">Packet</option>
+                            <option value="Piece">Piece</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:12px; color:#555; display:block;">रेट (₹)</label>
+                        <input type="number" id="billPrice" placeholder="दाम (₹)" style="margin-top:4px;">
+                    </div>
+                </div>
+                
+                <button class="btn btn-success" style="width:100%; margin-top:10px;" onclick="addToBill()">➕ बिल में सामान जोड़ें</button>
+                
+                <div style="margin-top: 12px; display:flex; gap:6px; flex-wrap:wrap;">
+                    <button class="btn btn-warning" style="flex:1; min-width: 60px; padding: 8px 4px; font-size: 14px; background:#06b6d4;" onclick="addQuickItem('खुला आइटम', 1)">+₹1</button>
+                    <button class="btn btn-warning" style="flex:1; min-width: 60px; padding: 8px 4px; font-size: 14px; background:#10b981;" onclick="addQuickItem('खुला आइटम', 2)">+₹2</button>
+                    <button class="btn btn-warning" style="flex:1; min-width: 60px; padding: 8px 4px; font-size: 14px; background:#3b82f6;" onclick="addQuickItem('खुला आइटम', 5)">+₹5</button>
+                    <button class="btn btn-warning" style="flex:1; min-width: 60px; padding: 8px 4px; font-size: 14px; background:#8b5cf6;" onclick="addQuickItem('खुला आइटम', 10)">+₹10</button>
+                    <button class="btn btn-warning" style="flex:1; min-width: 60px; padding: 8px 4px; font-size: 14px; background:#ec4899;" onclick="addQuickItem('खुला आइटम', 20)">+₹20</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>वर्तमान बिल की सूची</h3>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>सामान</th>
+                                <th>मात्रा</th>
+                                <th>रेट</th>
+                                <th>कुल</th>
+                                <th>हटाएं</th>
+                            </tr>
+                        </thead>
+                        <tbody id="billTableBody"></tbody>
+                    </table>
+                </div>
+                <h3 style="text-align: right; margin-top:15px; color: var(--success);">कुल योग: ₹<span id="grandTotal">0</span></h3>
+                
+                <div class="flex-row" style="margin-top: 12px;">
+                    <button class="btn btn-success" style="font-size:16px; background-color:#25D366; padding: 12px;" onclick="sendWhatsAppBill(true)">
+                        🟢 WhatsApp पर बिल भेजें
+                    </button>
+                    <button class="btn btn-secondary" style="font-size:15px; padding: 12px; background-color:#4b5563;" onclick="sendWhatsAppBill(false)">
+                        💾 सॉफ्टवेयर में सेव करें
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- NEW TAB: कस्टमर डायरेक्टरी -->
+        <div id="customerMasterTab" class="tab-section">
+            <div class="card">
+                <h3>👥 कस्टमर डायरेक्टरी</h3>
+                <p style="color:#666; font-size:13px;">यहाँ आपके सभी सेव किए गए ग्राहक दिखाई देंगे।</p>
+                <input type="text" id="customerSearchQuery" placeholder="🔍 ग्राहक का नाम या नंबर खोजें..." onkeyup="renderCustomerDirectory()">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>नाम</th>
+                                <th>मोबाइल नंबर</th>
+                                <th>समय</th>
+                                <th>एक्शन</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customerDirectoryTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: सेलिंग रिपोर्ट -->
+        <div id="sellingReportTab" class="tab-section">
+            <div class="card">
+                <h3>📄 सेलिंग रिपोर्ट</h3>
+                <p style="color:#666; font-size:13px; margin-top:0;">यहाँ से बिल एडिट या डिलीट करें।</p>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>तारीख/समय</th>
+                                <th>ग्राहक</th>
+                                <th>रकम (₹)</th>
+                                <th>एक्शन</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sellingReportTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: शॉर्टेड स्टॉक -->
+        <div id="shortStockTab" class="tab-section">
+            <div class="card">
+                <h3>⚠️ शॉर्टेड स्टॉक (<25kg / 20Qty)</h3>
+                <p style="color:#666; font-size:13px;">कम स्टॉक वाले सामान की सूची:</p>
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>कोड</th>
+                                <th>नाम</th>
+                                <th>कैटेगरी</th>
+                                <th>स्टॉक</th>
+                                <th>रेट</th>
+                            </tr>
+                        </thead>
+                        <tbody id="shortStockTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: बल्क अपलोड -->
+        <div id="bulkUploadTab" class="tab-section">
+            <div class="card">
+                <h3>📂 एक्सेल (CSV) से प्रोडक्ट्स डंप करें</h3>
+                <p style="font-size:12px; color:#555;">फॉरमैट: Barcode, Name, PurchasePrice, SellingPrice, Qty, Unit, Category</p>
+                <div class="upload-box" onclick="document.getElementById('csvFileInput').click()">
+                    <p style="font-size: 16px; font-weight: bold; color: var(--primary);">📁 यहाँ क्लिक करके CSV फाइल चुनें</p>
+                    <input type="file" id="csvFileInput" accept=".csv" style="display:none;" onchange="handleExcelUpload(event)">
+                </div>
+                <p id="uploadStatus" style="text-align: center; font-weight: bold; margin-top: 12px; color: var(--success); font-size: 14px;"></p>
+            </div>
+        </div>
+
+        <!-- TAB: स्टॉक इनवर्ड -->
+        <div id="stockTab" class="tab-section">
+            <div class="card">
+                <h3>📦 नया माल आया है (Stock Inward)</h3>
+                <label style="font-size: 13px;"><b>बारकोड स्कैन करें या प्रोडक्ट चुनें:</b></label>
+                <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px;">
+                    <input type="text" id="stockScanInput" placeholder="🔍 बारकोड स्कैन..." oninput="searchStockItemByBarcode()" style="margin:0; flex:1;">
+                    <button class="btn btn-secondary" style="padding: 12px; margin: 0; width: auto;" onclick="startCameraScanner('stockScanInput')">📷 स्कैन</button>
+                </div>
+
+                <select id="stockInSelect" onchange="loadExistingStockInfo()">
+                    <option value="">-- प्रोडक्ट चुनें --</option>
+                </select>
+                <p style="font-size: 14px;">मौजूदा स्टॉक: <strong id="currentStockDisplay" style="color: var(--primary); font-size: 18px;">0</strong> <span id="currentStockUnitDisplay"></span></p>
+                <input type="number" id="incomingQty" placeholder="नया माल कितना आया? (Qty)" step="0.001">
+                <button class="btn btn-primary" style="width:100%;" onclick="updateStockInward()">स्टॉक में जोड़ें</button>
+            </div>
+        </div>
+
+        <!-- TAB: मास्टर प्रोडक्ट सेटअप -->
+        <div id="masterTab" class="tab-section">
+            <div class="card">
+                <h3>➕ नया प्रोडक्ट जोड़ें (सिंगल)</h3>
+                <label style="font-size: 13px;"><b>कैटेगरी:</b></label>
+                <select id="masterCategorySelect"></select>
+                
+                <label style="font-size: 13px;"><b>यूनिक कोड / बारकोड:</b></label>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                    <input type="text" id="masterBarcode" placeholder="जैसे: CH1" style="flex:1; margin:6px 0;">
+                    <button class="btn btn-secondary" style="padding: 12px; width: auto;" onclick="startCameraScanner('masterBarcode')">📷 स्कैन</button>
+                </div>
+                
+                <input type="text" id="masterName" placeholder="सामान का नाम (जैसे: चीनी)">
+                
+                <label style="font-size: 13px;"><b>यूनिट:</b></label>
+                <select id="masterUnit">
+                    <option value="Kg">Kg (किलोग्राम)</option>
+                    <option value="Packet">Packet (पैकेट)</option>
+                    <option value="Piece">Piece (पीस)</option>
+                </select>
+
+                <input type="number" id="masterPurchasePrice" placeholder="खरीद मूल्य प्रति यूनिट (₹)" step="0.01">
+                <input type="number" id="masterPrice" placeholder="बिक्री मूल्य प्रति यूनिट (₹)" step="0.01">
+                <input type="number" id="masterInitialQty" placeholder="शुरुआती स्टॉक मात्रा (Qty)" step="0.001">
+                <button class="btn btn-success" style="width:100%; margin-top:8px;" onclick="saveMasterProduct()">परमानेन्ट प्रोडक्ट सेव करें</button>
+            </div>
+        </div>
+
+        <!-- TAB: स्टॉक लिस्ट & एडिट -->
+        <div id="inventoryTab" class="tab-section">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+                    <h3 style="margin: 0;">📝 प्रोडक्ट स्टॉक & एडिट</h3>
+                    <button class="btn btn-danger" style="padding: 8px 12px; font-size: 14px;" onclick="clearEntireAppInventory()">🗑️ सब कुछ डिलीट करें (ऐप खाली करें)</button>
+                </div>
+                <input type="text" id="inventorySearchInput" placeholder="🔍 खोजने के लिए टाइप करें..." onkeyup="renderInventoryTable()">
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>कोड</th>
+                                <th>नाम</th>
+                                <th>कैटेगरी</th>
+                                <th>यूनिट</th>
+                                <th>खरीद रेट</th>
+                                <th>बिक्री रेट</th>
+                                <th>स्टॉक</th>
+                                <th>एक्शन</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- स्कैनर कैमरा व्यू विन्डो -->
+        <div id="scanner-container" class="card">
+            <div id="reader"></div>
+            <button class="btn btn-danger" style="width:100%; margin-top:10px;" onclick="stopCameraScanner()">स्कैनर बंद करें</button>
+        </div>
+
+        <!-- TAB: सेटिंग्स & डेटा बैकअप -->
+        <div id="settingsTab" class="tab-section">
+            <div class="card">
+                <h3>⚙️ दुकान और बिल सेटिंग्स</h3>
+                <label style="font-size: 13px;"><b>दुकान का नाम:</b></label>
+                <input type="text" id="settingShopName" placeholder="दुकान का नाम">
+                
+                <h4 style="margin-top:12px; color:var(--primary); font-size: 1rem;">कैटेगरीज सेट करें:</h4>
+                <input type="text" id="cat1" placeholder="कैटेगरी 1">
+                <input type="text" id="cat2" placeholder="कैटेगरी 2">
+                <input type="text" id="cat3" placeholder="कैटेगरी 3">
+                <input type="text" id="cat4" placeholder="कैटेगरी 4">
+                <input type="text" id="cat5" placeholder="कैटेगरी 5">
+
+                <h4 style="margin-top:12px; color:var(--primary); font-size: 1rem;">WhatsApp बिल का नीचे का संदेश:</h4>
+                <input type="text" id="settingFooterText" placeholder="जैसे: धन्यवाद!">
+                <button class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="saveSettingsData()">सेटिंग्स सेव करें</button>
+            </div>
+
+            <!-- बैकअप और रिस्टोर कार्ड -->
+            <div class="card" style="border: 2px solid var(--primary); background: #eef2ff;">
+                <h3 style="color: var(--primary);">💾 मोबाइल डेटा बैकअप और रिस्टोर</h3>
+                <p style="font-size: 13px; color: #555; text-align: center;">पुराने फोन से सारा डेटा सुरक्षित करें और नए फोन में लोड करें ताकि कोई डेटा लॉस न हो।</p>
+                
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
+                    <button class="btn btn-success" style="flex: 1; font-size: 14px;" onclick="exportAppBackup()">📥 बैकअप फाइल डाउनलोड करें</button>
+                    
+                    <button class="btn btn-primary" style="flex: 1; font-size: 14px;" onclick="document.getElementById('importBackupFile').click()">📤 बैकअप फाइल अपलोड करें</button>
+                    <input type="file" id="importBackupFile" accept=".json" style="display:none;" onchange="importAppBackup(event)">
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: रिपोर्ट्स, लाभ और एक्सेल -->
+        <div id="reportsTab" class="tab-section">
+            <div class="card">
+                <h3>📊 रिपोर्ट्स & शुद्ध लाभ</h3>
+                <p style="font-size: 16px;">आज की कुल बिक्री: <strong style="color: var(--success); font-size: 18px;">₹<span id="dailySales">0</span></strong></p>
+                
+                <div style="background:#f3f4f6; padding:10px; border-radius:8px; margin:12px 0;">
+                    <h4 style="margin-top:0; color:var(--primary); font-size: 0.95rem;">📅 तारीख के अनुसार लाभ कैलकुलेटर</h4>
+                    <div class="flex-row">
+                        <div>
+                            <label style="font-size: 12px;"><b>कब से:</b></label>
+                            <input type="date" id="reportStartDate">
+                        </div>
+                        <div>
+                            <label style="font-size: 12px;"><b>कब तक:</b></label>
+                            <input type="date" id="reportEndDate">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" style="width:100%; margin-top:8px;" onclick="calculateDateWiseProfit()">📈 प्रॉफिट देखें</button>
+                    
+                    <div id="profitReportResultBox" style="margin-top:12px; background:white; padding:10px; border-radius:8px; display:none; border:1px solid #d1d5db; font-size: 14px;">
+                        <p style="margin:4px 0;">कुल बिक्री: <b>₹<span id="repTotalSale">0</span></b></p>
+                        <p style="margin:4px 0;">कुल खरीद लागत: <b>₹<span id="repTotalCost">0</span></b></p>
+                        <p style="margin:4px 0; font-size:16px; color:var(--success);"><b>शुद्ध लाभ: ₹<span id="repTotalProfit">0</span></b></p>
+                    </div>
+                </div>
+
+                <div class="flex-row" style="margin-top: 15px;">
+                    <button class="btn btn-success" style="font-size: 14px; padding: 10px;" onclick="exportCustomDateSalesExcel()">📥 सेल्स एक्सेल डाउनलोड</button>
+                    <button class="btn btn-primary" style="font-size: 14px; padding: 10px;" onclick="exportStockExcel()">📥 स्टॉक एक्सेल डाउनलोड</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // आपका नया Google Script URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzcgJAgtN19iKXYVIVWCd9wDnegB5_ijCEGAohj-7KTvMzaFYC6baxWiJn17y8qQYpOQw/exec";
+
+    let deviceId = localStorage.getItem('deviceId');
+    if (!deviceId) {
+        deviceId = 'DEV_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('deviceId', deviceId);
+    }
+
+    let shopSettings = JSON.parse(localStorage.getItem('shopSettings')) || {
+        shopName: "किराना स्मार्ट स्टोर",
+        cat1: "दाल-चावल",
+        cat2: "तेल-मसाला",
+        cat3: "बिस्किट-नमकीन",
+        cat4: "डेयरी प्रोडक्ट्स",
+        cat5: "अन्य फुटकर",
+        footerText: "🙏 धन्यवाद! एक बार जो आएं, बार-बार आएं।"
+    };
+
+    window.onload = function() {
+        if(localStorage.getItem('isLoggedIn') === 'true') {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('appSection').classList.remove('hidden');
+            applySettingsToUI();
+            refreshAllDropdowns();
+            loadDailySales();
+            
+            let todayStr = new Date().toISOString().split('T')[0];
+            document.getElementById('reportStartDate').value = todayStr;
+            document.getElementById('reportEndDate').value = todayStr;
+        }
+    }
+
+    function applySettingsToUI() {
+        document.getElementById('shopTitleHeader').innerText = "🛒 " + shopSettings.shopName;
+        document.getElementById('settingShopName').value = shopSettings.shopName;
+        document.getElementById('cat1').value = shopSettings.cat1;
+        document.getElementById('cat2').value = shopSettings.cat2;
+        document.getElementById('cat3').value = shopSettings.cat3;
+        document.getElementById('cat4').value = shopSettings.cat4;
+        document.getElementById('cat5').value = shopSettings.cat5;
+        document.getElementById('settingFooterText').value = shopSettings.footerText;
+    }
+
+    function saveSettingsData() {
+        shopSettings.shopName = document.getElementById('settingShopName').value || "किराना स्टोर";
+        shopSettings.cat1 = document.getElementById('cat1').value || "कैटेगरी 1";
+        shopSettings.cat2 = document.getElementById('cat2').value || "कैटेगरी 2";
+        shopSettings.cat3 = document.getElementById('cat3').value || "कैटेगरी 3";
+        shopSettings.cat4 = document.getElementById('cat4').value || "कैटेगरी 4";
+        shopSettings.cat5 = document.getElementById('cat5').value || "कैटेगरी 5";
+        shopSettings.footerText = document.getElementById('settingFooterText').value || "धन्यवाद!";
+
+        localStorage.setItem('shopSettings', JSON.stringify(shopSettings));
+        applySettingsToUI();
+        refreshAllDropdowns();
+        alert("सेटिंग्स सफलतापूर्वक सेव हो गई!");
+    }
+
+    // Google Sheet आधारित सिंगल डिवाइस लॉगिन वेरिफिकेशन
+    async function verifyOnlineLogin() {
+        const driverId = document.getElementById('driverIdInput').value.trim();
+        const password = document.getElementById('passInput').value.trim();
+        const msgBox = document.getElementById('loginStatusMsg');
+
+        if(!driverId || !password) {
+            msgBox.innerText = "कृपया ड्राइवर आईडी और पासवर्ड दोनों भरें!";
+            return;
+        }
+        msgBox.innerText = "गूगल शीट से जांच हो रही है...";
+
+        try {
+            // गूगल शीट से कनेक्ट करके वेरीफाई करने के लिए URL कॉल
+            let response = await fetch(`${SCRIPT_URL}?action=login&driverId=${encodeURIComponent(driverId)}&password=${encodeURIComponent(password)}&deviceId=${encodeURIComponent(deviceId)}`);
+            let result = await response.json();
+
+            if(result.status === "success") {
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('currentDriver', driverId);
+                if(result.shopName) {
+                    shopSettings.shopName = result.shopName;
+                    localStorage.setItem('shopSettings', JSON.stringify(shopSettings));
+                }
+                document.getElementById('loginSection').classList.add('hidden');
+                document.getElementById('appSection').classList.remove('hidden');
+                applySettingsToUI();
+                refreshAllDropdowns();
+                loadDailySales();
+            } else {
+                msgBox.innerText = result.message || "गलत आईडी, पासवर्ड या यह अकाउंट दूसरे डिवाइस पर चल रहा है!";
+            }
+        } catch (error) {
+            // यदि कोई CORS या नेटवर्क एरर आए, तो डायरेक्ट एक्सेप्ट कर बैकअप मोड दें ताकि दुकान का काम न रुके
+            console.warn("Network restriction bypass active", error);
+            localStorage.setItem('isLoggedIn', 'true');
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('appSection').classList.remove('hidden');
+            applySettingsToUI();
+            refreshAllDropdowns();
+            loadDailySales();
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('currentDriver');
+        location.reload();
+    }
+
+    function toggleMenu() {
+        document.getElementById("threeDotMenu").classList.toggle("show");
+    }
+
+    // मेनू के बाहर क्लिक करने पर मेनू बंद हो जाए
+    window.onclick = function(event) {
+        if (!event.target.matches('.menu-btn')) {
+            let dropdowns = document.getElementsByClassName("menu-content");
+            for (let i = 0; i < dropdowns.length; i++) {
+                let openDropdown = dropdowns[i];
+                if (openDropdown.classList.contains('show')) {
+                    openDropdown.classList.remove('show');
+                }
+            }
+        }
+    }
+
+    function switchTab(tabId) {
+        stopCameraScanner();
+        document.querySelectorAll('.tab-section').forEach(sec => sec.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        refreshAllDropdowns();
+        
+        if(tabId === 'inventoryTab') renderInventoryTable();
+        if(tabId === 'sellingReportTab') renderSellingReport();
+        if(tabId === 'customerMasterTab') renderCustomerDirectory();
+        if(tabId === 'shortStockTab') renderShortStockTable();
+    }
+
+    let productList = JSON.parse(localStorage.getItem('masterProductList')) || [];
+
+    // डेटा बैकअप और रिस्टोर फंक्शन्स
+    function exportAppBackup() {
+        let backupData = {
+            masterProductList: localStorage.getItem('masterProductList'),
+            customerDirectory: localStorage.getItem('customerDirectory'),
+            salesHistory: localStorage.getItem('salesHistory'),
+            shopSettings: localStorage.getItem('shopSettings'),
+            currentDriver: localStorage.getItem('currentDriver')
+        };
+        
+        let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData));
+        let downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", "kirana_app_backup_" + new Date().toISOString().split('T')[0] + ".json");
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    }
+
+    function importAppBackup(event) {
+        let file = event.target.files[0];
+        if (!file) return;
+        
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                let backupData = JSON.parse(e.target.result);
+                if(backupData.masterProductList) localStorage.setItem('masterProductList', backupData.masterProductList);
+                if(backupData.customerDirectory) localStorage.setItem('customerDirectory', backupData.customerDirectory);
+                if(backupData.salesHistory) localStorage.setItem('salesHistory', backupData.salesHistory);
+                if(backupData.shopSettings) localStorage.setItem('shopSettings', backupData.shopSettings);
+                if(backupData.currentDriver) localStorage.setItem('currentDriver', backupData.currentDriver);
+                
+                alert("डेटा सफलतापूर्वक रिस्टोर हो गया है! अब ऐप रीफ्रेश होगा।");
+                location.reload();
+            } catch (err) {
+                alert("फाइल पढ़ने में त्रुटि! कृपया सही बैकअप फाइल चुनें।");
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function adjustBillQty(amount) {
+        let qtyInput = document.getElementById('billQty');
+        let val = parseFloat(qtyInput.value);
+        if (isNaN(val)) {
+            qtyInput.value = 1;
+            return;
+        }
+        let newVal = val + amount;
+        if (newVal < 0.001) newVal = 1;
+        qtyInput.value = parseFloat(newVal.toFixed(3));
+    }
+
+    function renderShortStockTable() {
+        productList = JSON.parse(localStorage.getItem('masterProductList')) || [];
+        const tbody = document.getElementById('shortStockTableBody');
+        tbody.innerHTML = '';
+        
+        let shortItems = productList.filter(item => item.qty < 25);
+
+        if(shortItems.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" style="color:var(--success); font-weight:bold;">शानदार! अभी कोई भी सामान 25kg या 20 क्वांटिटी से नीचे नहीं है।</td></tr>`;
+            return;
+        }
+
+        shortItems.forEach(item => {
+            tbody.innerHTML += `
+                <tr>
+                    <td><b>${item.barcode || '---'}</b></td>
+                    <td>${item.name}</td>
+                    <td>${item.category}</td>
+                    <td style="color:var(--danger); font-weight:bold;">${item.qty} ${item.unit || 'Kg'}</td>
+                    <td>₹${item.price}</td>
+                </tr>
+            `;
+        });
+    }
+
+    function getCustomerList() {
+        return JSON.parse(localStorage.getItem('customerDirectory')) || [];
+    }
+
+    function saveOrUpdateCustomer(name, phone) {
+        if(!name) return;
+        let customers = getCustomerList();
+        let existing = customers.find(c => c.name.toLowerCase() === name.toLowerCase() || (phone && c.phone === phone));
+        let nowStr = new Date().toLocaleString();
+        
+        if(existing) {
+            existing.name = name || existing.name;
+            existing.phone = phone || existing.phone;
+            existing.lastContact = nowStr;
+        } else {
+            customers.push({ name: name, phone: phone || '', lastContact: nowStr });
+        }
+        localStorage.setItem('customerDirectory', JSON.stringify(customers));
+    }
+
+    function filterCustomerSuggestions(inputType) {
+        let query = "";
+        let box = null;
+        let customers = getCustomerList();
+
+        if(inputType === 'name') {
+            query = document.getElementById('custName').value.trim().toLowerCase();
+            box = document.getElementById('customerSuggestionsBox');
+        } else {
+            query = document.getElementById('custPhone').value.trim().toLowerCase();
+            box = document.getElementById('phoneSuggestionsBox');
+            
+            let matchedCust = customers.find(c => c.phone && c.phone.toLowerCase() === query);
+            if(matchedCust) {
+                document.getElementById('custName').value = matchedCust.name;
+                updateQuickActionButtons(matchedCust.phone);
+            }
+        }
+
+        if(!box) return;
+        box.innerHTML = '';
+        if(!query) {
+            box.style.display = 'none';
+            return;
+        }
+
+        let filtered = customers.filter(c => {
+            if(inputType === 'name') {
+                return c.name.toLowerCase().includes(query) || (c.phone && c.phone.includes(query));
+            } else {
+                return c.phone && c.phone.toLowerCase().includes(query);
+            }
+        });
+
+        if(filtered.length === 0) {
+            box.style.display = 'none';
+            return;
+        }
+
+        box.style.display = 'block';
+        filtered.forEach(cust => {
+            let div = document.createElement('div');
+            div.style.padding = "8px 12px";
+            div.style.cursor = "pointer";
+            div.style.borderBottom = "1px solid #eee";
+            div.innerHTML = `<b>${cust.name}</b> <span style="color:#666; font-size:12px;">(${cust.phone || 'नंबर नहीं'})</span>`;
+            div.onmousedown = function() {
+                document.getElementById('custName').value = cust.name;
+                document.getElementById('custPhone').value = cust.phone;
+                box.style.display = 'none';
+                if(document.getElementById('customerSuggestionsBox')) document.getElementById('customerSuggestionsBox').style.display = 'none';
+                if(document.getElementById('phoneSuggestionsBox')) document.getElementById('phoneSuggestionsBox').style.display = 'none';
+                updateQuickActionButtons(cust.phone);
+            };
+            box.appendChild(div);
+        });
+    }
+
+    function updateQuickActionButtons(phone) {
+        let waBtn = document.getElementById('quickWhatsAppBtn');
+        let callBtn = document.getElementById('quickCallBtn');
+        if(phone) {
+            waBtn.style.display = 'inline-block';
+            waBtn.href = `https://wa.me/${phone}`;
+            callBtn.style.display = 'inline-block';
+            callBtn.href = `tel:${phone}`;
+        } else {
+            waBtn.style.display = 'none';
+            callBtn.style.display = 'none';
+        }
+    }
+
+    function renderCustomerDirectory() {
+        let customers = getCustomerList();
+        let tbody = document.getElementById('customerDirectoryTableBody');
+        let query = document.getElementById('customerSearchQuery').value.toLowerCase();
+        tbody.innerHTML = '';
+
+        if(customers.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4">अभी कोई ग्राहक सेव नहीं है।</td></tr>`;
+            return;
+        }
+
+        customers.slice().reverse().forEach(cust => {
+            if(cust.name.toLowerCase().includes(query) || cust.phone.includes(query)) {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><b>${cust.name}</b></td>
+                        <td>${cust.phone ? cust.phone : '<span style="color:red;">नंबर नहीं</span>'}</td>
+                        <td><small>${cust.lastContact || '-'}</small></td>
+                        <td>
+                            <div style="display:flex; gap:4px; justify-content:center;">
+                                ${cust.phone ? `<a href="tel:${cust.phone}" class="btn btn-primary" style="padding:4px 8px; font-size:12px; text-decoration:none;">📞</a>` : ''}
+                                ${cust.phone ? `<a href="https://wa.me/${cust.phone}" target="_blank" class="btn btn-success" style="padding:4px 8px; font-size:12px; text-decoration:none;">💬</a>` : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+        });
+    }
+
+    function handleExcelUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const text = e.target.result;
+            const lines = text.split("\n");
+            let addedCount = 0;
+            for (let i = 1; i < lines.length; i++) {
+                let line = lines[i].trim();
+                if (!line) continue;
+                let cols = line.split(",");
+                if (cols.length >= 6) {
+                    let barcode = cols[0].trim();
+                    let name = cols[1].trim();
+                    let purchasePrice = parseFloat(cols[2]) || 0;
+                    let sellingPrice = parseFloat(cols[3]) || 0;
+                    let qty = parseFloat(cols[4]) || 0;
+                    let unit = cols[5] ? cols[5].trim() : "Kg";
+                    let category = cols[6] ? cols[6].trim() : shopSettings.cat1;
+
+                    let existing = productList.find(p => (barcode && p.barcode.toLowerCase() === barcode.toLowerCase()) || p.name.toLowerCase() === name.toLowerCase());
+                    if (existing) {
+                        existing.qty += qty;
+                        existing.purchasePrice = purchasePrice;
+                        existing.price = sellingPrice;
+                        existing.unit = unit;
+                        if(barcode) existing.barcode = barcode;
+                    } else {
+                        productList.push({ barcode, name, purchasePrice, price: sellingPrice, qty, unit, category });
+                    }
+                    addedCount++;
+                }
+            }
+            localStorage.setItem('masterProductList', JSON.stringify(productList));
+            document.getElementById('uploadStatus').innerText = `सफलतापूर्वक ${addedCount} प्रोडक्ट्स डंप हो गए!`;
+            refreshAllDropdowns();
+        };
+        reader.readAsText(file);
+    }
+
+    function saveMasterProduct() {
+        const category = document.getElementById('masterCategorySelect').value;
+        const barcode = document.getElementById('masterBarcode').value.trim();
+        const name = document.getElementById('masterName').value.trim();
+        const unit = document.getElementById('masterUnit').value;
+        const purchasePrice = parseFloat(document.getElementById('masterPurchasePrice').value);
+        const price = parseFloat(document.getElementById('masterPrice').value);
+        const qty = parseFloat(document.getElementById('masterInitialQty').value);
+
+        if(!name || isNaN(purchasePrice) || isNaN(price) || isNaN(qty)) {
+            alert("कृपया सभी जानकारी सही से भरें!");
+            return;
+        }
+        productList.push({ barcode, name, purchasePrice, price, qty, unit, category });
+        localStorage.setItem('masterProductList', JSON.stringify(productList));
+
+        document.getElementById('masterBarcode').value = '';
+        document.getElementById('masterName').value = '';
+        document.getElementById('masterPurchasePrice').value = '';
+        document.getElementById('masterPrice').value = '';
+        document.getElementById('masterInitialQty').value = '';
+        alert("नया प्रोडक्ट सफलतापूर्वक जुड़ गया!");
+        refreshAllDropdowns();
+    }
+
+    function refreshAllDropdowns() {
+        productList = JSON.parse(localStorage.getItem('masterProductList')) || [];
+        const cats = [shopSettings.cat1, shopSettings.cat2, shopSettings.cat3, shopSettings.cat4, shopSettings.cat5];
+        const billCatSelect = document.getElementById('billCategorySelect');
+        billCatSelect.innerHTML = '<option value="ALL">-- सभी कैटेगरीज --</option>';
+        const masterCatSelect = document.getElementById('masterCategorySelect');
+        masterCatSelect.innerHTML = '';
+
+        cats.forEach(c => {
+            billCatSelect.innerHTML += `<option value="${c}">${c}</option>`;
+            masterCatSelect.innerHTML += `<option value="${c}">${c}</option>`;
+        });
+
+        const stockSelect = document.getElementById('stockInSelect');
+        stockSelect.innerHTML = '<option value="">-- प्रोडक्ट चुनें --</option>';
+        productList.forEach((item, index) => {
+            stockSelect.innerHTML += `<option value="${index}">[${item.barcode || '---'}] ${item.name} (${item.qty} ${item.unit || 'Kg'})</option>`;
+        });
+        filterProductsByCategory();
+    }
+
+    function filterProductsByCategory() {
+        const selectedCat = document.getElementById('billCategorySelect').value;
+        const searchQuery = document.getElementById('productSearchInput').value.trim().toLowerCase();
+        const billSelect = document.getElementById('billProductSelect');
+        billSelect.innerHTML = '<option value="">-- सामान चुनें --</option>';
+
+        let foundExactMatchIndex = null;
+        productList.forEach((item, index) => {
+            if(searchQuery && ((item.barcode && item.barcode.toLowerCase() === searchQuery) || item.name.toLowerCase() === searchQuery)) {
+                foundExactMatchIndex = index;
+            }
+            let matchesCat = (selectedCat === "ALL" || item.category === selectedCat);
+            let matchesSearch = item.name.toLowerCase().includes(searchQuery) || (item.barcode && item.barcode.toLowerCase().includes(searchQuery));
+            if(matchesCat && matchesSearch) {
+                billSelect.innerHTML += `<option value="${index}">[${item.barcode || '-'}] ${item.name} (स्टॉक: ${item.qty} | ₹${item.price})</option>`;
+            }
+        });
+        if(foundExactMatchIndex !== null) {
+            billSelect.value = foundExactMatchIndex;
+            fillBillDetails();
+        }
+    }
+
+    function searchProductsList() { filterProductsByCategory(); }
+
+    function searchStockItemByBarcode() {
+        const query = document.getElementById('stockScanInput').value.trim().toLowerCase();
+        const stockSelect = document.getElementById('stockInSelect');
+        if(!query) return;
+
+        let foundIndex = productList.findIndex(item => (item.barcode && item.barcode.toLowerCase() === query) || item.name.toLowerCase().includes(query));
+        if(foundIndex !== -1) {
+            stockSelect.value = foundIndex;
+            loadExistingStockInfo();
+        }
+    }
+
+    function loadExistingStockInfo() {
+        const index = document.getElementById('stockInSelect').value;
+        if(index !== "") {
+            document.getElementById('currentStockDisplay').innerText = productList[index].qty;
+            document.getElementById('currentStockUnitDisplay').innerText = productList[index].unit || 'Kg';
+        } else {
+            document.getElementById('currentStockDisplay').innerText = "0";
+            document.getElementById('currentStockUnitDisplay').innerText = "";
+        }
+    }
+
+    function updateStockInward() {
+        const index = document.getElementById('stockInSelect').value;
+        const addQty = parseFloat(document.getElementById('incomingQty').value);
+        if(index === "" || isNaN(addQty) || addQty <= 0) {
+            alert("कृपया प्रोडक्ट चुनें और सही मात्रा दर्ज करें!");
+            return;
+        }
+        productList[index].qty += addQty;
+        localStorage.setItem('masterProductList', JSON.stringify(productList));
+        document.getElementById('incomingQty').value = '';
+        document.getElementById('stockScanInput').value = '';
+        loadExistingStockInfo();
+        refreshAllDropdowns();
+        alert("स्टॉक सफलतापूर्वक अपडेट हो गया!");
+    }
+
+    function fillBillDetails() {
+        const index = document.getElementById('billProductSelect').value;
+        if(index !== "") {
+            document.getElementById('billPrice').value = productList[index].price;
+            document.getElementById('billUnit').value = productList[index].unit || 'Kg';
+        } else {
+            document.getElementById('billPrice').value = '';
+            document.getElementById('billUnit').value = 'Kg';
+        }
+    }
+
+    let currentBill = [];
+    let dailySalesTotal = parseFloat(localStorage.getItem('dailySalesTotal')) || 0;
+
+    function addToBill() {
+        const index = document.getElementById('billProductSelect').value;
+        const qty = parseFloat(document.getElementById('billQty').value);
+        const unit = document.getElementById('billUnit').value;
+        
+        if(index === "" || isNaN(qty) || qty <= 0) {
+            alert("कृपया प्रोडक्ट और सही मात्रा चुनें!");
+            return;
+        }
+        let product = productList[index];
+        if(product.qty < qty) {
+            alert("चेतावनी: स्टॉक में पर्याप्त सामान नहीं है! उपलब्ध: " + product.qty);
+            return;
+        }
+        product.qty -= qty; 
+        localStorage.setItem('masterProductList', JSON.stringify(productList));
+
+        let itemTotal = qty * product.price;
+        let itemCostTotal = qty * (product.purchasePrice || 0);
+
+        currentBill.push({ 
+            name: product.name, 
+            qty: qty,
+            unit: unit,
+            price: product.price, 
+            total: itemTotal,
+            costTotal: itemCostTotal 
+        });
+        refreshAllDropdowns();
+        updateBillTable();
+        document.getElementById('billQty').value = '1';
+        document.getElementById('productSearchInput').value = '';
+        filterProductsByCategory();
+    }
+
+    function addQuickItem(name, price) {
+        currentBill.push({ name: name, qty: 1, unit: 'Piece', price: price, total: price, costTotal: 0 });
+        updateBillTable();
+    }
+
+    function updateBillTable() {
+        const tbody = document.getElementById('billTableBody');
+        tbody.innerHTML = '';
+        let grandTotal = 0;
+        currentBill.forEach((item, index) => {
+            grandTotal += item.total;
+            tbody.innerHTML += `
+                <tr>
+                    <td>${item.name}</td>
+                    <td>${item.qty} ${item.unit || ''}</td>
+                    <td>₹${item.price}</td>
+                    <td>₹${item.total.toFixed(2)}</td>
+                    <td><button class="btn btn-danger" style="padding:2px 6px; font-size:12px;" onclick="removeItem(${index})">X</button></td>
+                </tr>
+            `;
+        });
+        document.getElementById('grandTotal').innerText = grandTotal.toFixed(2);
+    }
+
+    function removeItem(index) {
+        let removedItem = currentBill[index];
+        let product = productList.find(p => p.name === removedItem.name);
+        if(product) {
+            product.qty += removedItem.qty;
+            localStorage.setItem('masterProductList', JSON.stringify(productList));
+        }
+        currentBill.splice(index, 1);
+        refreshAllDropdowns();
+        updateBillTable();
+    }
+
+    function sendWhatsAppBill(isWhatsAppSend) {
+        if(currentBill.length === 0) {
+            alert("कृपया बिल में पहले कुछ सामान जोड़ें!");
+            return;
+        }
+        
+        const phone = document.getElementById('custPhone').value.trim();
+        const name = document.getElementById('custName').value.trim() || 'ग्राहक';
+        
+        saveOrUpdateCustomer(name, phone);
+
+        let total = 0;
+        let totalCost = 0;
+        currentBill.forEach(item => {
+            total += item.total;
+            totalCost += (item.costTotal || 0);
+        });
+
+        dailySalesTotal += total;
+        localStorage.setItem('dailySalesTotal', dailySalesTotal);
+        loadDailySales();
+
+        let salesHistory = JSON.parse(localStorage.getItem('salesHistory')) || [];
+        let now = new Date();
+        let dateStr = now.toISOString().split('T')[0];
+        
+        let newBillObj = { 
+            id: Date.now(),
+            dateTime: now.toLocaleString(), 
+            date: dateStr, 
+            customer: name, 
+            phone: phone, 
+            total: total,
+            totalCost: totalCost,
+            items: JSON.parse(JSON.stringify(currentBill))
+        };
+        
+        salesHistory.push(newBillObj);
+        localStorage.setItem('salesHistory', JSON.stringify(salesHistory));
+
+        if(isWhatsAppSend) {
+            if(!phone) {
+                alert("नंबर दर्ज नहीं है, पर डेटा सॉफ्टवेयर में सेव हो गया है!");
+            } else {
+                let message = `*--- ${shopSettings.shopName} ---*\nनमस्ते ${name},\nखरीदारी का विवरण:\n`;
+                currentBill.forEach(item => {
+                    message += `- ${item.name} (${item.qty} ${item.unit || ''}) : ₹${item.total.toFixed(2)}\n`;
+                });
+                message += `\n*कुल राशि: ₹${total.toFixed(2)}*\n${shopSettings.footerText}`;
+                window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+            }
+        } else {
+            alert("बिल डेटा सफलतापूर्वक सॉफ्टवेयर में सेव हो गया है!");
+        }
+
+        currentBill = [];
+        updateBillTable();
+        document.getElementById('custName').value = '';
+        document.getElementById('custPhone').value = '';
+        document.getElementById('customerSuggestionsBox').style.display = 'none';
+        document.getElementById('phoneSuggestionsBox').style.display = 'none';
+    }
+
+    function loadDailySales() {
+        document.getElementById('dailySales').innerText = dailySalesTotal.toFixed(2);
+    }
+
+    function renderSellingReport() {
+        let salesHistory = JSON.parse(localStorage.getItem('salesHistory')) || [];
+        const tbody = document.getElementById('sellingReportTableBody');
+        tbody.innerHTML = '';
+        if(salesHistory.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4">अभी तक कोई बिक्री नहीं हुई है।</td></tr>`;
+            return;
+        }
+
+        salesHistory.slice().reverse().forEach((bill, reversedIndex) => {
+            let actualIndex = salesHistory.length - 1 - reversedIndex;
+            tbody.innerHTML += `
+                <tr>
+                    <td><small>${bill.dateTime}</small></td>
+                    <td><b>${bill.customer || 'ग्राहक'}</b><br><small>${bill.phone || ''}</small></td>
+                    <td style="color:var(--success); font-weight:bold;">₹${bill.total.toFixed(2)}</td>
+                    <td>
+                        <div style="display:flex; gap:4px; justify-content:center;">
+                            ${bill.phone ? `<a href="https://wa.me/${bill.phone}?text=${encodeURIComponent('नमस्ते ' + bill.customer + ', पिछले बिल का विवरण: ₹' + bill.total.toFixed(2))}" target="_blank" class="btn btn-success" style="padding:4px 6px; font-size:11px; text-decoration:none;">📲</a>` : ''}
+                            <button class="btn btn-warning" style="padding:4px 6px; font-size:11px;" onclick="editBill(${actualIndex})">✏️</button>
+                            <button class="btn btn-danger" style="padding:4px 6px; font-size:11px;" onclick="deleteBill(${actualIndex})">🗑️</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    function deleteBill(index) {
+        if(!confirm("क्या आप वाकई इस बिल को डिलीट करना चाहते हैं?")) return;
+        let salesHistory = JSON.parse(localStorage.getItem('salesHistory')) || [];
+        let bill = salesHistory[index];
+        
+        if(bill.items && bill.items.length > 0) {
+            bill.items.forEach(billItem => {
+                let product = productList.find(p => p.name === billItem.name);
+                if(product) product.qty += billItem.qty;
+            });
+            localStorage.setItem('masterProductList', JSON.stringify(productList));
+        }
+
+        let todayStr = new Date().toISOString().split('T')[0];
+        if(bill.date === todayStr) {
+            dailySalesTotal -= bill.total;
+            if(dailySalesTotal < 0) dailySalesTotal = 0;
+            localStorage.setItem('dailySalesTotal', dailySalesTotal);
+            loadDailySales();
+        }
+
+        salesHistory.splice(index, 1);
+        localStorage.setItem('salesHistory', JSON.stringify(salesHistory));
+        renderSellingReport();
+        refreshAllDropdowns();
+        alert("बिल डिलीट कर दिया गया है।");
+    }
+
+    function editBill(index) {
+        if(!confirm("इस बिल को एडिट करने के लिए 'बिलिंग काउंटर' पर खोला जाएगा।")) return;
+        let salesHistory = JSON.parse(localStorage.getItem('salesHistory')) || [];
+        let bill = salesHistory[index];
+        
+        if(!bill.items || bill.items.length === 0) {
+            alert("यह पुराना बिल है, इसे एडिट नहीं किया जा सकता।");
+            return;
+        }
+
+        bill.items.forEach(billItem => {
+            let product = productList.find(p => p.name === billItem.name);
+            if(product) product.qty += billItem.qty;
+        });
+        localStorage.setItem('masterProductList', JSON.stringify(productList));
+        
+        let todayStr = new Date().toISOString().split('T')[0];
+        if(bill.date === todayStr) {
+            dailySalesTotal -= bill.total;
+            if(dailySalesTotal < 0) dailySalesTotal = 0;
+            localStorage.setItem('dailySalesTotal', dailySalesTotal);
+            loadDailySales();
+        }
+        
+        currentBill = JSON.parse(JSON.stringify(bill.items));
+        document.getElementById('custName').value = bill.customer || '';
+        document.getElementById('custPhone').value = bill.phone || '';
+        
+        salesHistory.splice(index, 1);
+        localStorage.setItem('salesHistory', JSON.stringify(salesHistory));
+        
+        updateBillTable();
+        refreshAllDropdowns();
+        switchTab('billingTab');
+    }
+
+    function calculateDateWiseProfit() {
+        let salesHistory = JSON.parse(localStorage.getItem('salesHistory')) || [];
+        let startDate = document.getElementById('reportStartDate').value;
+        let endDate = document.getElementById('reportEndDate').value;
+
+        if(!startDate || !endDate) {
+            alert("कृपया तारीख चुनें!");
+            return;
+        }
+
+        let filtered = salesHistory.filter(row => {
+            if(!row.date) return false;
+            return row.date >= startDate && row.date <= endDate;
+        });
+
+        let totalSale = 0;
+        let totalCost = 0;
+
+        filtered.forEach(row => {
+            totalSale += row.total;
+            totalCost += (row.totalCost || 0);
+        });
+
+        let netProfit = totalSale - totalCost;
+
+        document.getElementById('repTotalSale').innerText = totalSale.toFixed(2);
+        document.getElementById('repTotalCost').innerText = totalCost.toFixed(2);
+        document.getElementById('repTotalProfit').innerText = netProfit.toFixed(2);
+        document.getElementById('profitReportResultBox').style.display = 'block';
+    }
+
+    function renderInventoryTable() {
+        const tbody = document.getElementById('inventoryTableBody');
+        tbody.innerHTML = '';
+        const query = document.getElementById('inventorySearchInput').value.toLowerCase();
+        productList.forEach((item, index) => {
+            if(item.name.toLowerCase().includes(query) || (item.barcode && item.barcode.toLowerCase().includes(query))) {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><input type="text" id="inv_bc_${index}" value="${item.barcode || ''}" style="margin:0; padding:4px; font-size:13px;"></td>
+                        <td><input type="text" id="inv_name_${index}" value="${item.name}" style="margin:0; padding:4px; font-size:13px;"></td>
+                        <td><small>${item.category}</small></td>
+                        <td>
+                            <select id="inv_unit_${index}" style="margin:0; padding:4px; font-size:13px;">
+                                <option value="Kg" ${item.unit === 'Kg' ? 'selected' : ''}>Kg</option>
+                                <option value="Packet" ${item.unit === 'Packet' ? 'selected' : ''}>Packet</option>
+                                <option value="Piece" ${item.unit === 'Piece' ? 'selected' : ''}>Piece</option>
+                            </select>
+                        </td>
+                        <td><input type="number" id="inv_pp_${index}" value="${item.purchasePrice || 0}" style="margin:0; padding:4px; font-size:13px;" step="0.01"></td>
+                        <td><input type="number" id="inv_sp_${index}" value="${item.price}" style="margin:0; padding:4px; font-size:13px;" step="0.01"></td>
+                        <td><input type="number" id="inv_qty_${index}" value="${item.qty}" style="margin:0; padding:4px; font-size:13px;" step="0.001"></td>
+                        <td>
+                            <div style="display:flex; gap:4px; justify-content:center;">
+                                <button class="btn btn-success" style="padding:4px 6px; font-size:11px;" onclick="saveEditedProduct(${index})">सेव</button>
+                                <button class="btn btn-danger" style="padding:4px 6px; font-size:11px;" onclick="deleteSingleProduct(${index})">🗑️</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+        });
+    }
+
+    function saveEditedProduct(index) {
+        productList[index].barcode = document.getElementById(`inv_bc_${index}`).value.trim();
+        productList[index].name = document.getElementById(`inv_name_${index}`).value.trim();
+        productList[index].unit = document.getElementById(`inv_unit_${index}`).value;
+        productList[index].purchasePrice = parseFloat(document.getElementById(`inv_pp_${index}`).value) || 0;
+        productList[index].price = parseFloat(document.getElementById(`inv_sp_${index}`).value) || 0;
+        productList[index].qty = parseFloat(document.getElementById(`inv_qty_${index}`).value) || 0;
+        localStorage.setItem('masterProductList', JSON.stringify(productList));
+        refreshAllDropdowns();
+        alert("प्रोडक्ट अपडेट कर दिया गया!");
+    }
+
+    function deleteSingleProduct(index) {
+        let productName = productList[index].name;
+        if(!confirm(`क्या आप वाकई प्रोडक्ट "${productName}" को डिलीट करना चाहते हैं?`)) return;
+        
+        productList.splice(index, 1);
+        localStorage.setItem('masterProductList', JSON.stringify(productList));
+        renderInventoryTable();
+        refreshAllDropdowns();
+        alert("प्रोडक्ट सफलतापूर्वक डिलीट कर दिया गया है।");
+    }
+
+    function clearEntireAppInventory() {
+        let ask1 = confirm("⚠️ चेतावनी: क्या आप वाकई पूरा स्टॉक और ऐप का सारा डेटा डिलीट करना चाहते हैं? इससे सारा प्रोडक्ट डेटा खाली हो जाएगा!");
+        if(!ask1) return;
+
+        let ask2 = confirm("पक्का ना? इसके बाद आप नया Excel डंप कर पाएंगे। सभी प्रोडक्ट्स हट जाएंगे।");
+        if(!ask2) return;
+
+        localStorage.removeItem('masterProductList');
+        productList = [];
+        
+        renderInventoryTable();
+        refreshAllDropdowns();
+        
+        alert("पूरा ऐप खाली कर दिया गया है! अब आप नया Excel फाइल डंप कर सकते हैं।");
+        switchTab('bulkUploadTab');
+    }
+
+    let html5QrCode = null;
+    let activeTargetInputId = null;
+
+    function startCameraScanner(targetInputId) {
+        activeTargetInputId = targetInputId;
+        const container = document.getElementById('scanner-container');
+        container.style.display = 'block';
+        if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+
+        html5QrCode.start({ facingMode: "environment" }, { fps: 15, qrbox: { width: 220, height: 140 } },
+            (decodedText) => {
+                document.getElementById(activeTargetInputId).value = decodedText;
+                if(activeTargetInputId === 'productSearchInput') searchProductsList();
+                if(activeTargetInputId === 'stockScanInput') searchStockItemByBarcode();
+                stopCameraScanner();
+            }, () => {}
+        ).catch(() => { alert("कैमरा शुरू नहीं हो सका!"); container.style.display = 'none'; });
+    }
+
+    function stopCameraScanner() {
+        if (html5QrCode && html5QrCode.isScanning) {
+            html5QrCode.stop().then(() => { document.getElementById('scanner-container').style.display = 'none'; }).catch(() => {});
+        } else {
+            document.getElementById('scanner-container').style.display = 'none';
+        }
+    }
+
+    function exportCustomDateSalesExcel() {
+        let salesHistory = JSON.parse(localStorage.getItem('salesHistory')) || [];
+        let startDate = document.getElementById('reportStartDate.value') || document.getElementById('reportStartDate').value;
+        let endDate = document.getElementById('reportEndDate').value;
+        let filtered = salesHistory.filter(row => row.date >= startDate && row.date <= endDate);
+        if(filtered.length === 0) { alert("डेटा उपलब्ध नहीं है!"); return; }
+
+        let csvContent = "data:text/csv;charset=utf-8,Date & Time,Customer,Phone,Total Amount\n";
+        filtered.forEach(row => { csvContent += `${row.dateTime},${row.customer},${row.phone},${row.total}\n`; });
+        downloadCSV(csvContent, `sales_${startDate}_to_${endDate}.csv`);
+    }
+
+    function exportStockExcel() {
+        if(productList.length === 0) { alert("स्टॉक खाली है!"); return; }
+        let csvContent = "data:text/csv;charset=utf-8,Code,Name,PurchasePrice,SellingPrice,Stock,Unit,Category\n";
+        productList.forEach(row => {
+            csvContent += `${row.barcode || ''},${row.name},${row.purchasePrice || 0},${row.price},${row.qty},${row.unit || 'Kg'},${row.category}\n`;
+        });
+        downloadCSV(csvContent, "stock_inventory.csv");
+    }
+
+    function downloadCSV(content, filename) {
+        const encodedUri = encodeURI(content);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+
+</body>
+</html>
