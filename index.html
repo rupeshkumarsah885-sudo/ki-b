@@ -518,7 +518,7 @@
 </div>
 
 <script>
-    // आपका नया Google Script URL
+    // अपडेटेड Google Script URL[cite: 2]
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzcgJAgtN19iKXYVIVWCd9wDnegB5_ijCEGAohj-7KTvMzaFYC6baxWiJn17y8qQYpOQw/exec";
 
     let deviceId = localStorage.getItem('deviceId');
@@ -590,7 +590,6 @@
         msgBox.innerText = "गूगल शीट से जांच हो रही है...";
 
         try {
-            // गूगल शीट से कनेक्ट करके वेरीफाई करने के लिए URL कॉल
             let response = await fetch(`${SCRIPT_URL}?action=login&driverId=${encodeURIComponent(driverId)}&password=${encodeURIComponent(password)}&deviceId=${encodeURIComponent(deviceId)}`);
             let result = await response.json();
 
@@ -610,7 +609,6 @@
                 msgBox.innerText = result.message || "गलत आईडी, पासवर्ड या यह अकाउंट दूसरे डिवाइस पर चल रहा है!";
             }
         } catch (error) {
-            // यदि कोई CORS या नेटवर्क एरर आए, तो डायरेक्ट एक्सेप्ट कर बैकअप मोड दें ताकि दुकान का काम न रुके
             console.warn("Network restriction bypass active", error);
             localStorage.setItem('isLoggedIn', 'true');
             document.getElementById('loginSection').classList.add('hidden');
@@ -631,7 +629,6 @@
         document.getElementById("threeDotMenu").classList.toggle("show");
     }
 
-    // मेनू के बाहर क्लिक करने पर मेनू बंद हो जाए
     window.onclick = function(event) {
         if (!event.target.matches('.menu-btn')) {
             let dropdowns = document.getElementsByClassName("menu-content");
@@ -658,7 +655,6 @@
 
     let productList = JSON.parse(localStorage.getItem('masterProductList')) || [];
 
-    // डेटा बैकअप और रिस्टोर फंक्शन्स
     function exportAppBackup() {
         let backupData = {
             masterProductList: localStorage.getItem('masterProductList'),
@@ -1387,7 +1383,7 @@
 
     function exportCustomDateSalesExcel() {
         let salesHistory = JSON.parse(localStorage.getItem('salesHistory')) || [];
-        let startDate = document.getElementById('reportStartDate.value') || document.getElementById('reportStartDate').value;
+        let startDate = document.getElementById('reportStartDate').value;
         let endDate = document.getElementById('reportEndDate').value;
         let filtered = salesHistory.filter(row => row.date >= startDate && row.date <= endDate);
         if(filtered.length === 0) { alert("डेटा उपलब्ध नहीं है!"); return; }
